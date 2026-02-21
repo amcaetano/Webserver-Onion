@@ -1,0 +1,57 @@
+==================== CRIAÇÃO DE UM WEBSERVER + HOSPEDAGEM ONION ====================
+
+1. Atualizar o sistema e instalar os pacotes ncessários
+
+ ==>  sudo apt update
+ ==>  sudo apt install nginx tor 
+
+NOTA: Instalaremos os pacotes tor e nginx, este último por se tratar de um servidor web leve e muito simples de configurar e fazer deploy.
+
+2.Configurar o Hidden Service
+
+  ==> sudo vim /etc/tor/torrc
+
+NOTA: Procure pela seção "location-hidden services" e descomente (ou adicione) estas duas linhas:
+  
+
+  ==> HiddenServiceDir /var/lib/tor/meu_site_onion/
+  ==> HiddenServicePort 80 127.0.0.1:80
+
+NOTA: Onde está "meu_site_onion" você pode colocar o que você desejar. as demais informações se mantém as mesmas.
+HiddenServiceDir: Onde o Tor guardará as chaves criptograficas do seu site e o seu endereço .onion.
+HiddenServicePort: Mapeia a porta 80 da rede Tor para a porta 80 local do seu Nginx.
+
+3. Reinicie o serviço Tor
+
+  ==> sudo systemctl restart tor
+
+4. Acesse a url do seu site .onion
+
+  ==> sudo cat /var/lib/tor/meu_site_onion/hostname
+
+5. Configurar o Site no Nginx
+
+  ==> cd /var/www/html/
+  ==> sudo vim index.html
+
+NOTA: Crie seu código html que será exposto na rede tor e poderá ser acessado através da url gerada pelo serviço oculto do tor(hidden service) que foi armazenada no arquivo hostname. 
+
+6. Configuração de segurança no servidor web nginx
+
+  ==> sudo vim /etc/nginx/nginx.conf
+
+NOTA: desative os "tokens" de versão para que o site não diga qual sistema operacional e versão de servidor você usa, encontre a linha "server_tokens off;" se já estiver com essa sintaxe está correta caso contrário edite e deixa dessa forma.
+
+Garanta que seu Nginx esteja ouvindo apenas em 127.0.0.1. Se ele ouvir em 0.0.0.0, ele estará exposto na internet normal (clearnet) ao mesmo tempo, o que revela seu IP real.
+
+7. Configurar arquivo de configuração do "default"
+
+  ==> cat /etc/nginx/sites-enabled/default
+
+NOTA: A linha correta deve ser obrigatoriamente: 
+
+  ==> listen 127.0.0.1:80;
+
+NOTA2: Se estiver apenas listen 80;, o Nginx assume o padrão 0.0.0.0. Corrija para o IP local, salve e reinicie o serviço com o comando abaixo:
+
+  ==> sudo systemctl restart nginx.
